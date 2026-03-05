@@ -6,11 +6,17 @@
 class Cart {
 private:
     Product products[10];
+    int quantity[10];
     int count;
 
 public:
     Cart();
-    void addProduct(Product p);
+
+    int addItem(Product p,int quantity);
+    int removeItem(int productId);
+    int updateItem(int productId,int quantity);
+    int viewCart();
+    int checkOut();
     int getCount() const;
 };
 

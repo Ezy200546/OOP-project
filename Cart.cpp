@@ -1,10 +1,14 @@
+#include <iostream>
 #include "Cart.h"
+
+using namespace std;
 
 Cart::Cart() {
     count = 0;
 }
 
 int Cart::addItem(Product p, int qty) {
+
     if (count >= 10) {
         cout << "Cart is full\n";
         return 0;
@@ -19,7 +23,9 @@ int Cart::addItem(Product p, int qty) {
 }
 
 int Cart::removeItem(int productId) {
+
     for (int i = 0; i < count; i++) {
+
         if (products[i].id == productId) {
 
             for (int j = i; j < count - 1; j++) {
@@ -28,6 +34,7 @@ int Cart::removeItem(int productId) {
             }
 
             count--;
+
             cout << "Item removed\n";
             return 1;
         }
@@ -38,9 +45,12 @@ int Cart::removeItem(int productId) {
 }
 
 int Cart::updateItem(int productId, int qty) {
+
     for (int i = 0; i < count; i++) {
+
         if (products[i].id == productId) {
             quantity[i] = qty;
+
             cout << "Item updated\n";
             return 1;
         }
@@ -51,14 +61,16 @@ int Cart::updateItem(int productId, int qty) {
 }
 
 int Cart::viewCart() {
+
     if (count == 0) {
         cout << "Cart is empty\n";
         return 0;
     }
 
-    cout << "Cart Items:\n";
+    cout << "\nCart Items:\n";
 
     for (int i = 0; i < count; i++) {
+
         cout << "Product ID: " << products[i].id << endl;
         cout << "Name: " << products[i].name << endl;
         cout << "Price: " << products[i].price << endl;
@@ -66,14 +78,12 @@ int Cart::viewCart() {
         cout << "-----------------\n";
     }
 
+    cout << "Total: " << getTotal() << endl;
+
     return 1;
 }
 
-int Cart::checkOut() {
-    if (count == 0) {
-        cout << "Cart is empty\n";
-        return 0;
-    }
+double Cart::getTotal() {
 
     double total = 0;
 
@@ -81,13 +91,12 @@ int Cart::checkOut() {
         total += products[i].price * quantity[i];
     }
 
-    cout << "Total amount: " << total << endl;
-    cout << "Checkout successful\n";
+    return total;
+}
 
+void Cart::clearCart() {
     count = 0;
-
-    return 1;
-}  
+}
 
 int Cart::getCount() const {
     return count;

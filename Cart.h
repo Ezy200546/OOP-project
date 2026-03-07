@@ -16,7 +16,8 @@ public:
     int removeItem(int productId);
     int updateItem(int productId,int quantity);
     int viewCart();
-    int checkOut();
+    double getTotal();   // I need to have to total money for me to make the payement the previous one clear the cart before the payment
+    void clearCart();    // 
     int getCount() const;
 };
 

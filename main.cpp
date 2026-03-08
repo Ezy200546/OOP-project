@@ -3,12 +3,26 @@
 #include "Product.h"
 #include "Cart.h"
 #include "Order.h"
+
 #include <cstring>
 #include <fstream>
+#include <string>
+
 using namespace std;
 
-// ---------------- Button Helper ----------------
-bool Button(Rectangle rec, const char* text) {
+void saveUserToFile(const string& role, const string& username, const string& password)
+{
+    ofstream file("users.txt", ios::app);
+
+    if(file.is_open())
+    {
+        file << role << "," << username << "," << password << endl;
+        file.close();
+    }
+}
+
+bool Button(Rectangle rec, const char* text)
+{
     DrawRectangleRec(rec, LIGHTGRAY);
     DrawRectangleLinesEx(rec, 2, DARKGRAY);
     DrawText(text, rec.x + 10, rec.y + 10, 20, BLACK);
@@ -17,49 +31,42 @@ bool Button(Rectangle rec, const char* text) {
            IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
-// ---------------- Screens ----------------
-enum Screen {
+enum Screen
+{
     HOME,
-    LOGIN,
+    LOGIN_MENU,
+    REGISTER_MENU,
+    LOGIN_BUYER,
+    LOGIN_ADMIN,
     REGISTER,
-    BUYER_SCREEN,
-    SELLER_SCREEN,
-    ADMIN_LOGIN,
-    ADMIN_SCREEN
+    ADMIN_SCREEN,
+    ADMIN_ADD_PRODUCT,
+    BUYER_SCREEN
 };
 
-// ---------------- Save User ----------------
-void saveUserToFile(const string& role, const string& username, const string& password) {
-    ofstream file("users.txt", ios::app);
-    if (file.is_open()) {
-        file << role << "," << username << "," << password << endl;
-        file.close();
-    }
-}
-
-int main() {
-    InitWindow(900, 600, "MAHO E-Commerce (raylib)");
+int main()
+{
+    InitWindow(900, 600, "MAHO E-Commerce");
     SetTargetFPS(60);
 
-    // ---------------- USERS ----------------
-    Buyer buyers[10];
-    Seller sellers[10];
-    Buyer pendingBuyers[10];
+    Buyer buyers[20];
+    Buyer pendingBuyers[20];
 
     int buyerCount = 0;
-    int sellerCount = 0;
     int pendingBuyerCount = 0;
 
-    Buyer* loggedBuyer = nullptr;
-    Seller* loggedSeller = nullptr;
+    Buyer* loggedBuyer = NULL;
+    Product products[50];
 
-    // ---------------- INPUT ----------------
     char username[20] = "";
     char password[20] = "";
-    int userLen = 0, passLen = 0;
-    bool error = false;
 
-    // ---------------- ADMIN ----------------
+    int userLen = 0;
+    int passLen = 0;
+
+    bool typingUsername = false;
+    bool typingPassword = false;
+
     const char ADMIN_PASSWORD[] = "admin123";
     char adminPass[20] = "";
     int adminLen = 0;
@@ -67,184 +74,266 @@ int main() {
 
     Screen currentScreen = HOME;
 
-    // ---------------- MAIN LOOP ----------------
-    while (!WindowShouldClose()) {
+    while (!WindowShouldClose())
+    {
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        // -------- HOME --------
-        if (currentScreen == HOME) {
-            DrawText("MAHO E-COMMERCE", 280, 50, 32, DARKBLUE);
+        if (currentScreen == HOME)
+        {
+            DrawText("MAHO E-COMMERCE", 300, 80, 32, DARKBLUE);
 
-            if (Button({350, 150, 200, 45}, "Login"))
-                currentScreen = LOGIN;
+            if (Button({350,220,200,50},"Login"))
+                currentScreen = LOGIN_MENU;
 
-            if (Button({350, 220, 200, 45}, "Register"))
+            if (Button({350,300,200,50},"Register"))
+                currentScreen = REGISTER_MENU;
+        }
+
+        else if (currentScreen == LOGIN_MENU)
+        {
+            DrawText("Login Menu", 360, 100, 30, BLACK);
+
+            if (Button({350,220,200,50},"Login Buyer"))
+                currentScreen = LOGIN_BUYER;
+
+            if (Button({350,290,200,50},"Login Admin"))
+                currentScreen = LOGIN_ADMIN;
+
+            if (Button({350,360,200,40},"Back"))
+                currentScreen = HOME;
+        }
+
+        else if (currentScreen == REGISTER_MENU)
+        {
+            DrawText("Register", 380, 100, 30, BLACK);
+
+            if (Button({350,250,200,50},"Register Buyer"))
                 currentScreen = REGISTER;
 
-            if (Button({350, 290, 200, 45}, "Admin"))
-                currentScreen = ADMIN_LOGIN;
+            if (Button({350,320,200,40},"Back"))
+                currentScreen = HOME;
         }
 
-        // -------- REGISTER --------
-        else if (currentScreen == REGISTER) {
-            DrawText("Register Buyer / Seller", 280, 60, 30, BLACK);
+ 
+        else if (currentScreen == REGISTER)
+        {
+            DrawText("Buyer Registration", 320, 80, 30, BLACK);
 
-            DrawText("Username:", 250, 160, 20, BLACK);
-            DrawRectangle(380, 155, 250, 35, LIGHTGRAY);
-            DrawText(username, 390, 162, 20, BLACK);
+            Rectangle userBox = {360,195,250,35};
+            Rectangle passBox = {360,255,250,35};
 
-            DrawText("Password:", 250, 210, 20, BLACK);
-            DrawRectangle(380, 205, 250, 35, LIGHTGRAY);
+            DrawText("Username:",240,200,20,BLACK);
+            DrawRectangleRec(userBox,LIGHTGRAY);
+            DrawRectangleLinesEx(userBox,2,BLACK);
+            DrawText(username,370,202,20,BLACK);
+
+            DrawText("Password:",240,260,20,BLACK);
+            DrawRectangleRec(passBox,LIGHTGRAY);
+            DrawRectangleLinesEx(passBox,2,BLACK);
 
             char hidden[20] = "";
-            for (int i = 0; i < passLen; i++) hidden[i] = '*';
+            for(int i=0;i<passLen;i++) hidden[i] = '*';
             hidden[passLen] = '\0';
-            DrawText(hidden, 390, 212, 20, BLACK);
+
+            DrawText(hidden,370,262,20,BLACK);
+
+            if(CheckCollisionPointRec(GetMousePosition(), userBox) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            {
+                typingUsername = true;
+                typingPassword = false;
+            }
+
+            if(CheckCollisionPointRec(GetMousePosition(), passBox) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            {
+                typingUsername = false;
+                typingPassword = true;
+            }
 
             int key = GetCharPressed();
-            while (key > 0) {
-                if (key >= 32 && key <= 125 && userLen < 19) {
-                    username[userLen++] = key;
-                    username[userLen] = '\0';
+
+            while(key > 0)
+            {
+                if(key >= 32 && key <= 125)
+                {
+                    if(typingUsername && userLen < 19)
+                    {
+                        username[userLen++] = key;
+                        username[userLen] = '\0';
+                    }
+
+                    if(typingPassword && passLen < 19)
+                    {
+                        password[passLen++] = key;
+                        password[passLen] = '\0';
+                    }
                 }
+
                 key = GetCharPressed();
             }
 
-            if (IsKeyPressed(KEY_TAB)) { }
+            if(IsKeyPressed(KEY_BACKSPACE))
+            {
+                if(typingUsername && userLen > 0)
+                    username[--userLen] = '\0';
 
-            key = GetCharPressed();
-            while (key > 0) {
-                if (key >= 32 && key <= 125 && passLen < 19) {
-                    password[passLen++] = key;
-                    password[passLen] = '\0';
-                }
-                key = GetCharPressed();
+                if(typingPassword && passLen > 0)
+                    password[--passLen] = '\0';
             }
 
-            if (IsKeyPressed(KEY_BACKSPACE)) {
-                if (passLen > 0) password[--passLen] = '\0';
-                else if (userLen > 0) username[--userLen] = '\0';
-            }
+            if (Button({350,330,200,40},"Submit Registration"))
+            {
+                pendingBuyers[pendingBuyerCount++] = Buyer(username,password);
 
-            if (Button({350, 270, 200, 40}, "Register Buyer")) {
-                pendingBuyers[pendingBuyerCount++] = Buyer(username, password);
                 saveUserToFile("Buyer", username, password);
-                userLen = passLen = 0;
-                username[0] = password[0] = '\0';
+
+                userLen = 0;
+                passLen = 0;
+
+                username[0] = '\0';
+                password[0] = '\0';
+
                 currentScreen = HOME;
             }
 
-            if (Button({350, 320, 200, 40}, "Register Seller")) {
-                sellers[sellerCount++] = Seller(username, password);
-                saveUserToFile("Seller", username, password);
-                userLen = passLen = 0;
-                username[0] = password[0] = '\0';
-                currentScreen = HOME;
-            }
-
-            if (Button({350, 380, 200, 40}, "Back"))
-                currentScreen = HOME;
+            if (Button({350,390,200,40},"Back"))
+                currentScreen = REGISTER_MENU;
         }
 
-        // -------- LOGIN --------
-        else if (currentScreen == LOGIN) {
-            DrawText("Login", 420, 60, 30, BLACK);
+        else if (currentScreen == LOGIN_BUYER)
+        {
+            DrawText("Buyer Login", 360, 80, 30, BLACK);
 
-            DrawText("Username:", 250, 160, 20, BLACK);
-            DrawRectangle(380, 155, 250, 35, LIGHTGRAY);
-            DrawText(username, 390, 162, 20, BLACK);
+            DrawText("Username:",240,200,20,BLACK);
+            DrawRectangle(360,195,250,35,LIGHTGRAY);
+            DrawText(username,370,202,20,BLACK);
 
-            DrawText("Password:", 250, 210, 20, BLACK);
-            DrawRectangle(380, 205, 250, 35, LIGHTGRAY);
+            DrawText("Password:",240,260,20,BLACK);
+            DrawRectangle(360,255,250,35,LIGHTGRAY);
 
             char hidden[20] = "";
-            for (int i = 0; i < passLen; i++) hidden[i] = '*';
-            DrawText(hidden, 390, 212, 20, BLACK);
+            for(int i=0;i<passLen;i++) hidden[i]='*';
+            hidden[passLen]='\0';
 
-            if (Button({350, 270, 200, 40}, "Login Buyer")) {
-                error = true;
-                for (int i = 0; i < buyerCount; i++) {
-                    if (buyers[i].login(username, password)) {
-                        loggedBuyer = &buyers[i];
-                        currentScreen = BUYER_SCREEN;
-                        error = false;
-                        break;
+            DrawText(hidden,370,262,20,BLACK);
+
+            if (Button({350,330,200,40},"Login"))
+            {
+                for(int i=0;i<buyerCount;i++)
+                {
+                    if(buyers[i].login(username,password))
+                    {
+                        loggedBuyer=&buyers[i];
+                        currentScreen=BUYER_SCREEN;
                     }
                 }
             }
 
-            if (Button({350, 320, 200, 40}, "Login Seller")) {
-                error = true;
-                for (int i = 0; i < sellerCount; i++) {
-                    if (sellers[i].login(username, password)) {
-                        loggedSeller = &sellers[i];
-                        currentScreen = SELLER_SCREEN;
-                        error = false;
-                        break;
-                    }
-                }
-            }
-
-            if (error)
-                DrawText("Invalid login!", 380, 370, 20, RED);
-
-            if (Button({350, 420, 200, 40}, "Back"))
-                currentScreen = HOME;
+            if(Button({350,390,200,40},"Back"))
+                currentScreen=LOGIN_MENU;
         }
 
-        // -------- ADMIN LOGIN --------
-        else if (currentScreen == ADMIN_LOGIN) {
-            DrawText("Admin Login", 360, 80, 30, BLACK);
+        else if(currentScreen==LOGIN_ADMIN)
+        {
+            DrawText("Admin Login",360,100,30,BLACK);
 
-            DrawText("Password:", 300, 170, 20, BLACK);
-            DrawRectangle(300, 200, 300, 40, LIGHTGRAY);
+            DrawRectangle(320,220,260,40,LIGHTGRAY);
 
-            char hidden[20] = "";
-            for (int i = 0; i < adminLen; i++) hidden[i] = '*';
-            DrawText(hidden, 310, 210, 20, BLACK);
+            char hidden[20]="";
+            for(int i=0;i<adminLen;i++)
+                hidden[i]='*';
 
-            int key = GetCharPressed();
-            while (key > 0) {
-                if (key >= 32 && key <= 125 && adminLen < 19) {
-                    adminPass[adminLen++] = key;
-                    adminPass[adminLen] = '\0';
+            DrawText(hidden,330,230,20,BLACK);
+
+            int key=GetCharPressed();
+
+            while(key>0)
+            {
+                if(key>=32 && key<=125 && adminLen<19)
+                {
+                    adminPass[adminLen++]=key;
+                    adminPass[adminLen]='\0';
                 }
-                key = GetCharPressed();
+                key=GetCharPressed();
             }
 
-            if (IsKeyPressed(KEY_BACKSPACE) && adminLen > 0)
-                adminPass[--adminLen] = '\0';
+            if(IsKeyPressed(KEY_BACKSPACE)&&adminLen>0)
+                adminPass[--adminLen]='\0';
 
-            if (Button({350, 270, 200, 40}, "Login")) {
-                if (strcmp(adminPass, ADMIN_PASSWORD) == 0) {
-                    currentScreen = ADMIN_SCREEN;
-                    adminError = false;
-                } else adminError = true;
+            if(Button({350,300,200,40},"Login"))
+            {
+                if(strcmp(adminPass,ADMIN_PASSWORD)==0)
+                {
+                    currentScreen=ADMIN_SCREEN;
+                    adminError=false;
+                }
+                else
+                    adminError=true;
             }
 
-            if (adminError)
-                DrawText("Wrong Admin Password!", 320, 330, 20, RED);
+            if(adminError)
+                DrawText("Wrong Password!",350,360,20,RED);
 
-            if (Button({350, 380, 200, 40}, "Back"))
-                currentScreen = HOME;
+            if(Button({350,400,200,40},"Back"))
+                currentScreen=LOGIN_MENU;
         }
 
-        // -------- ADMIN DASHBOARD --------
-        else if (currentScreen == ADMIN_SCREEN) {
-            DrawText("Admin Dashboard", 30, 30, 28, DARKPURPLE);
-            DrawText("Pending Buyer Registrations:", 30, 100, 22, BLACK);
+        else if(currentScreen==ADMIN_SCREEN)
+        {
+            DrawText("Admin Dashboard",320,40,30,DARKBLUE);
 
-            int y = 140;
-            for (int i = 0; i < pendingBuyerCount; i++) {
-                DrawText(TextFormat("%d. %s",
-                    i + 1,
-                    pendingBuyers[i].getUsername().c_str()),
-                    30, y, 20, DARKGRAY);
-                y += 30;
+            DrawText("Pending Buyers:",60,120,22,BLACK);
+
+            int y=160;
+
+            for(int i=0;i<pendingBuyerCount;i++)
+            {
+                DrawText(pendingBuyers[i].getUsername().c_str(),60,y,20,BLACK);
+
+                if(Button({300,(float)y,90,30},"Accept"))
+                {
+                    buyers[buyerCount++]=pendingBuyers[i];
+
+                    for(int j=i;j<pendingBuyerCount-1;j++)
+                        pendingBuyers[j]=pendingBuyers[j+1];
+
+                    pendingBuyerCount--;
+                }
+
+                if(Button({400,(float)y,90,30},"Reject"))
+                {
+                    for(int j=i;j<pendingBuyerCount-1;j++)
+                        pendingBuyers[j]=pendingBuyers[j+1];
+
+                    pendingBuyerCount--;
+                }
+                
+
+                y+=40;
+            }
+            if(Button({650,200,200,40},"Add Product"))
+            {
+                currentScreen = ADMIN_ADD_PRODUCT;
             }
 
-            if (Button({30, 500, 180, 40}, "Logout"))
+            if(Button({650,320,200,40},"Logout"))
+                currentScreen=HOME;
+        }
+        
+
+        else if(currentScreen == BUYER_SCREEN)
+        {
+            DrawText("Buyer Dashboard",320,50,30,BLACK);
+
+            if(loggedBuyer != NULL)
+            {
+                DrawText(
+                    TextFormat("Welcome %s",
+                    loggedBuyer->getUsername().c_str()),
+                    330,100,20,DARKGREEN);
+            }
+
+            if(Button({350,500,200,40},"Logout"))
                 currentScreen = HOME;
         }
 
@@ -254,4 +343,3 @@ int main() {
     CloseWindow();
     return 0;
 }
-

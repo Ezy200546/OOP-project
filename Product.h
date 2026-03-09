@@ -2,30 +2,44 @@
 #define PRODUCT_H
 
 #include <iostream>
+#include <string>
+
 using namespace std;
 
 class Product {
-public:
+private:
     int id;
     string name;
     string category;
     double price;
     int stock;
 
-    Product() {}
+public:
+    // Constructors
+    Product();
+    Product(int id, string name, string category, double price, int stock);
 
-    Product(int i, string n, string c, double p, int s) {
-        id = i;
-        name = n;
-        category = c;
-        price = p;
-        stock = s;
-    }
+    // Getters
+    int getId();
+    string getName();
+    string getCategory();
+    double getPrice();
+    int getStock();
 
-    void display() {
-        cout << id << " | " << name << " | " << category
-             << " | $" << price << " | Stock: " << stock << endl;
-    }
+    // Setters
+    void setPrice(double price);
+    void setStock(int stock);
+
+    // Display product
+    void displayProduct();
+
+    // File operations
+    void saveToFile();
+
+    // Static operations
+    static void listAllProducts();
+    static void searchProduct(int id);
+    static void deleteProduct(int id);
 };
 
 #endif

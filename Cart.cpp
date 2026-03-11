@@ -26,7 +26,7 @@ int Cart::removeItem(int productId) {
 
     for (int i = 0; i < count; i++) {
 
-        if (products[i].id == productId) {
+        if (products[i].getId() == productId) {
 
             for (int j = i; j < count - 1; j++) {
                 products[j] = products[j + 1];
@@ -48,7 +48,7 @@ int Cart::updateItem(int productId, int qty) {
 
     for (int i = 0; i < count; i++) {
 
-        if (products[i].id == productId) {
+        if (products[i].getId() == productId) {
             quantity[i] = qty;
 
             cout << "Item updated\n";
@@ -71,9 +71,9 @@ int Cart::viewCart() {
 
     for (int i = 0; i < count; i++) {
 
-        cout << "Product ID: " << products[i].id << endl;
-        cout << "Name: " << products[i].name << endl;
-        cout << "Price: " << products[i].price << endl;
+        cout << "Product ID: " << products[i].getId() << endl;
+        cout << "Name: " << products[i].getName() << endl;
+        cout << "Price: " << products[i].getPrice()<< endl;
         cout << "Quantity: " << quantity[i] << endl;
         cout << "-----------------\n";
     }
@@ -88,7 +88,7 @@ double Cart::getTotal() {
     double total = 0;
 
     for (int i = 0; i < count; i++) {
-        total += products[i].price * quantity[i];
+        total += products[i].getPrice() * quantity[i];
     }
 
     return total;

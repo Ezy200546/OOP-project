@@ -1,0 +1,2 @@
+1 Laptop Electronics 900 5
+2 Tshirt Clothing 20 50

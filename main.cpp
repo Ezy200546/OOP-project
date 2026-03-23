@@ -2,25 +2,18 @@
 #include "User.h"
 #include "Product.h"
 #include "Cart.h"
-#include "Order.h"
+#include "Payment.h"
+#include "BKashPayment.h"
+#include "CashOnDelivery.h"
+#include "BKashAccounts.h"
 
 #include <cstring>
-#include <fstream>
+#include <cstdlib>
 #include <string>
 
 using namespace std;
 
-void saveUserToFile(const string& role, const string& username, const string& password)
-{
-    ofstream file("users.txt", ios::app);
-
-    if(file.is_open())
-    {
-        file << role << "," << username << "," << password << endl;
-        file.close();
-    }
-}
-
+// -------- BUTTON --------
 bool Button(Rectangle rec, const char* text)
 {
     DrawRectangleRec(rec, LIGHTGRAY);
@@ -31,311 +24,328 @@ bool Button(Rectangle rec, const char* text)
            IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 }
 
+// -------- SCREENS --------
 enum Screen
 {
     HOME,
-    LOGIN_MENU,
-    REGISTER_MENU,
-    LOGIN_BUYER,
-    LOGIN_ADMIN,
+    LOGIN,
     REGISTER,
-    ADMIN_SCREEN,
-    ADMIN_ADD_PRODUCT,
-    BUYER_SCREEN
+    ADMIN_LOGIN,
+    ADMIN,
+    BUYER,
+    ADD_PRODUCT,
+    CART_SCREEN,
+    PAYMENT_SCREEN
 };
 
+const char ADMIN_PASS[] = "admin123";
+
+char adminInput[20] = "";
+int adminLen = 0;
+
+bool adminError = false;
 int main()
 {
-    InitWindow(900, 600, "MAHO E-Commerce");
+    InitWindow(900, 600, "E-Commerce System");
     SetTargetFPS(60);
 
-    Buyer buyers[20];
-    Buyer pendingBuyers[20];
-
-    int buyerCount = 0;
-    int pendingBuyerCount = 0;
-
+    // USERS
+    Buyer buyers[20], pending[20];
+    int buyerCount = 0, pendingCount = 0;
     Buyer* loggedBuyer = NULL;
-    Product products[50];
 
+    // CART
+    Cart cart;
+
+    // INPUT
     char username[20] = "";
     char password[20] = "";
+    int userLen = 0, passLen = 0;
 
-    int userLen = 0;
-    int passLen = 0;
+    // PRODUCT INPUT
+    char pname[30] = "";
+    char pcat[30] = "";
+    char pprice[10] = "";
+    char pstock[10] = "";
 
-    bool typingUsername = false;
-    bool typingPassword = false;
+    int nameLen=0, catLen=0, priceLen=0, stockLen=0;
 
-    const char ADMIN_PASSWORD[] = "admin123";
+    // PAYMENT
+    char bkashNumber[20] = "";
+    int bkashLen = 0;
+
+    // ADMIN
+    const char ADMIN_PASS[] = "admin123";
     char adminPass[20] = "";
     int adminLen = 0;
     bool adminError = false;
 
-    Screen currentScreen = HOME;
+    Screen screen = HOME;
 
-    while (!WindowShouldClose())
+    while(!WindowShouldClose())
     {
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        if (currentScreen == HOME)
+        // ================= HOME =================
+        if(screen == HOME)
         {
-            DrawText("MAHO E-COMMERCE", 300, 80, 32, DARKBLUE);
+            DrawText("MAHO E-COMMERCE", 250, 80, 30, DARKBLUE);
 
-            if (Button({350,220,200,50},"Login"))
-                currentScreen = LOGIN_MENU;
+            if(Button({350,200,200,50},"Login"))
+                screen = LOGIN;
 
-            if (Button({350,300,200,50},"Register"))
-                currentScreen = REGISTER_MENU;
+            if(Button({350,270,200,50},"Register"))
+                screen = REGISTER;
         }
 
-        else if (currentScreen == LOGIN_MENU)
+        // ================= REGISTER =================
+        else if(screen == REGISTER)
         {
-            DrawText("Login Menu", 360, 100, 30, BLACK);
+            DrawText("Register Buyer", 320, 80, 30, BLACK);
 
-            if (Button({350,220,200,50},"Login Buyer"))
-                currentScreen = LOGIN_BUYER;
+            DrawText("Username:",250,200,20,BLACK);
+            DrawRectangle(380,195,250,35,LIGHTGRAY);
+            DrawText(username,390,202,20,BLACK);
 
-            if (Button({350,290,200,50},"Login Admin"))
-                currentScreen = LOGIN_ADMIN;
-
-            if (Button({350,360,200,40},"Back"))
-                currentScreen = HOME;
-        }
-
-        else if (currentScreen == REGISTER_MENU)
-        {
-            DrawText("Register", 380, 100, 30, BLACK);
-
-            if (Button({350,250,200,50},"Register Buyer"))
-                currentScreen = REGISTER;
-
-            if (Button({350,320,200,40},"Back"))
-                currentScreen = HOME;
-        }
-
- 
-        else if (currentScreen == REGISTER)
-        {
-            DrawText("Buyer Registration", 320, 80, 30, BLACK);
-
-            Rectangle userBox = {360,195,250,35};
-            Rectangle passBox = {360,255,250,35};
-
-            DrawText("Username:",240,200,20,BLACK);
-            DrawRectangleRec(userBox,LIGHTGRAY);
-            DrawRectangleLinesEx(userBox,2,BLACK);
-            DrawText(username,370,202,20,BLACK);
-
-            DrawText("Password:",240,260,20,BLACK);
-            DrawRectangleRec(passBox,LIGHTGRAY);
-            DrawRectangleLinesEx(passBox,2,BLACK);
-
-            char hidden[20] = "";
-            for(int i=0;i<passLen;i++) hidden[i] = '*';
-            hidden[passLen] = '\0';
-
-            DrawText(hidden,370,262,20,BLACK);
-
-            if(CheckCollisionPointRec(GetMousePosition(), userBox) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-            {
-                typingUsername = true;
-                typingPassword = false;
-            }
-
-            if(CheckCollisionPointRec(GetMousePosition(), passBox) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-            {
-                typingUsername = false;
-                typingPassword = true;
-            }
+            DrawText("Password:",250,260,20,BLACK);
+            DrawRectangle(380,255,250,35,LIGHTGRAY);
+            DrawText(password,390,262,20,BLACK);
 
             int key = GetCharPressed();
-
             while(key > 0)
             {
                 if(key >= 32 && key <= 125)
                 {
-                    if(typingUsername && userLen < 19)
+                    if(userLen < 19)
                     {
                         username[userLen++] = key;
                         username[userLen] = '\0';
                     }
-
-                    if(typingPassword && passLen < 19)
-                    {
-                        password[passLen++] = key;
-                        password[passLen] = '\0';
-                    }
                 }
-
                 key = GetCharPressed();
             }
 
-            if(IsKeyPressed(KEY_BACKSPACE))
+            if(IsKeyPressed(KEY_BACKSPACE) && userLen>0)
+                username[--userLen]='\0';
+
+            if(Button({350,330,200,40},"Submit"))
             {
-                if(typingUsername && userLen > 0)
-                    username[--userLen] = '\0';
+                pending[pendingCount++] = Buyer(username,password);
 
-                if(typingPassword && passLen > 0)
-                    password[--passLen] = '\0';
-            }
+                username[0]=password[0]='\0';
+                userLen=passLen=0;
 
-            if (Button({350,330,200,40},"Submit Registration"))
-            {
-                pendingBuyers[pendingBuyerCount++] = Buyer(username,password);
-
-                saveUserToFile("Buyer", username, password);
-
-                userLen = 0;
-                passLen = 0;
-
-                username[0] = '\0';
-                password[0] = '\0';
-
-                currentScreen = HOME;
-            }
-
-            if (Button({350,390,200,40},"Back"))
-                currentScreen = REGISTER_MENU;
-        }
-
-        else if (currentScreen == LOGIN_BUYER)
-        {
-            DrawText("Buyer Login", 360, 80, 30, BLACK);
-
-            DrawText("Username:",240,200,20,BLACK);
-            DrawRectangle(360,195,250,35,LIGHTGRAY);
-            DrawText(username,370,202,20,BLACK);
-
-            DrawText("Password:",240,260,20,BLACK);
-            DrawRectangle(360,255,250,35,LIGHTGRAY);
-
-            char hidden[20] = "";
-            for(int i=0;i<passLen;i++) hidden[i]='*';
-            hidden[passLen]='\0';
-
-            DrawText(hidden,370,262,20,BLACK);
-
-            if (Button({350,330,200,40},"Login"))
-            {
-                for(int i=0;i<buyerCount;i++)
-                {
-                    if(buyers[i].login(username,password))
-                    {
-                        loggedBuyer=&buyers[i];
-                        currentScreen=BUYER_SCREEN;
-                    }
-                }
+                screen = HOME;
             }
 
             if(Button({350,390,200,40},"Back"))
-                currentScreen=LOGIN_MENU;
+                screen = HOME;
         }
 
-        else if(currentScreen==LOGIN_ADMIN)
+        // ================= LOGIN =================
+        else if(screen == LOGIN)
         {
-            DrawText("Admin Login",360,100,30,BLACK);
+            DrawText("Login", 380, 80, 30, BLACK);
 
-            DrawRectangle(320,220,260,40,LIGHTGRAY);
+            if(Button({350,200,200,40},"Buyer Login"))
+                screen = BUYER;
 
-            char hidden[20]="";
-            for(int i=0;i<adminLen;i++)
-                hidden[i]='*';
+           if(Button({350,260,200,40},"Admin Login"))
+                screen = ADMIN_LOGIN;
+        }
 
-            DrawText(hidden,330,230,20,BLACK);
+        // ================= ADMIN =================
+        else if(screen == ADMIN)
+        {
+            DrawText("Admin Panel", 330, 40, 30, DARKBLUE);
 
-            int key=GetCharPressed();
+            int y = 120;
 
+            for(int i=0;i<pendingCount;i++)
+            {
+                DrawText(pending[i].getUsername().c_str(), 50, y, 20, BLACK);
+
+                if(Button({250,(float)y,80,30},"Accept"))
+                {
+                    buyers[buyerCount++] = pending[i];
+
+                    for(int j=i;j<pendingCount-1;j++)
+                        pending[j]=pending[j+1];
+
+                    pendingCount--;
+                }
+
+                if(Button({350,(float)y,80,30},"Reject"))
+                {
+                    for(int j=i;j<pendingCount-1;j++)
+                        pending[j]=pending[j+1];
+
+                    pendingCount--;
+                }
+
+                y+=40;
+            }
+
+            if(Button({600,200,200,40},"Add Product"))
+                screen = ADD_PRODUCT;
+
+            if(Button({600,260,200,40},"Logout"))
+                screen = HOME;
+        }
+
+        // ================= ADD PRODUCT =================
+        else if(screen == ADD_PRODUCT)
+        {
+            DrawText("Add Product", 350, 80, 30, BLACK);
+
+            DrawRectangle(300,200,250,35,LIGHTGRAY);
+            DrawText(pname,310,205,20,BLACK);
+
+            int key = GetCharPressed();
             while(key>0)
             {
-                if(key>=32 && key<=125 && adminLen<19)
+                if(nameLen<29)
                 {
-                    adminPass[adminLen++]=key;
-                    adminPass[adminLen]='\0';
+                    pname[nameLen++] = key;
+                    pname[nameLen]='\0';
                 }
                 key=GetCharPressed();
             }
 
-            if(IsKeyPressed(KEY_BACKSPACE)&&adminLen>0)
-                adminPass[--adminLen]='\0';
-
-            if(Button({350,300,200,40},"Login"))
+            if(Button({350,300,200,40},"Save"))
             {
-                if(strcmp(adminPass,ADMIN_PASSWORD)==0)
-                {
-                    currentScreen=ADMIN_SCREEN;
-                    adminError=false;
-                }
-                else
-                    adminError=true;
+                Product p(rand()%1000, pname, "General", atof(pprice), 10);
+                p.saveToFile();
+
+                pname[0]='\0';
+                nameLen=0;
+
+                screen = ADMIN;
             }
-
-            if(adminError)
-                DrawText("Wrong Password!",350,360,20,RED);
-
-            if(Button({350,400,200,40},"Back"))
-                currentScreen=LOGIN_MENU;
         }
 
-        else if(currentScreen==ADMIN_SCREEN)
+        // ================= BUYER =================
+        else if(screen == BUYER)
         {
-            DrawText("Admin Dashboard",320,40,30,DARKBLUE);
+            DrawText("Buyer Dashboard", 320, 50, 30, BLACK);
 
-            DrawText("Pending Buyers:",60,120,22,BLACK);
-
-            int y=160;
-
-            for(int i=0;i<pendingBuyerCount;i++)
+            if(Button({350,200,200,40},"Add Fake Product"))
             {
-                DrawText(pendingBuyers[i].getUsername().c_str(),60,y,20,BLACK);
-
-                if(Button({300,(float)y,90,30},"Accept"))
-                {
-                    buyers[buyerCount++]=pendingBuyers[i];
-
-                    for(int j=i;j<pendingBuyerCount-1;j++)
-                        pendingBuyers[j]=pendingBuyers[j+1];
-
-                    pendingBuyerCount--;
-                }
-
-                if(Button({400,(float)y,90,30},"Reject"))
-                {
-                    for(int j=i;j<pendingBuyerCount-1;j++)
-                        pendingBuyers[j]=pendingBuyers[j+1];
-
-                    pendingBuyerCount--;
-                }
-                
-
-                y+=40;
-            }
-            if(Button({650,200,200,40},"Add Product"))
-            {
-                currentScreen = ADMIN_ADD_PRODUCT;
+                Product p(1,"Phone","Electronics",500,10);
+                cart.addItem(p,1);
             }
 
-            if(Button({650,320,200,40},"Logout"))
-                currentScreen=HOME;
+            if(Button({350,260,200,40},"View Cart"))
+                screen = CART_SCREEN;
+
+            if(Button({350,320,200,40},"Logout"))
+                screen = HOME;
         }
-        
 
-        else if(currentScreen == BUYER_SCREEN)
+        // ================= CART =================
+        else if(screen == CART_SCREEN)
         {
-            DrawText("Buyer Dashboard",320,50,30,BLACK);
+            DrawText("Cart", 400, 50, 30, BLACK);
 
-            if(loggedBuyer != NULL)
+            DrawText(
+                TextFormat("Total: %.2f", cart.getTotal()),
+                350,200,20,BLACK
+            );
+
+            if(Button({350,300,200,40},"Checkout"))
+                screen = PAYMENT_SCREEN;
+
+            if(Button({350,360,200,40},"Back"))
+                screen = BUYER;
+        }
+
+        // ================= PAYMENT =================
+        else if(screen == PAYMENT_SCREEN)
+        {
+            DrawText("Payment", 380, 80, 30, BLACK);
+
+            if(Button({350,200,200,40},"bKash"))
             {
-                DrawText(
-                    TextFormat("Welcome %s",
-                    loggedBuyer->getUsername().c_str()),
-                    330,100,20,DARKGREEN);
+                BKashAccounts acc;
+                acc.loadAccounts("bKashAccounts.txt");
+
+                Payment* p = new BKashPayment(cart.getTotal(), "01700000000");
+
+                if(p->validate())
+                    p->process(acc);
+
+                delete p;
+                cart.clearCart();
             }
 
-            if(Button({350,500,200,40},"Logout"))
-                currentScreen = HOME;
+            if(Button({350,260,200,40},"Cash On Delivery"))
+            {
+                Payment* p = new CashOnDelivery(cart.getTotal());
+
+                p->process(*(new BKashAccounts()));
+
+                delete p;
+                cart.clearCart();
+            }
+
+            if(Button({350,320,200,40},"Back"))
+                screen = CART_SCREEN;
         }
+
+               else if(screen == ADMIN_LOGIN)
+{
+    DrawText("Admin Login", 350, 80, 30, BLACK);
+
+    DrawText("Password:", 250, 200, 20, BLACK);
+    DrawRectangle(380,195,250,35,LIGHTGRAY);
+
+    // hide password
+    char hidden[20] = "";
+    for(int i=0;i<adminLen;i++)
+        hidden[i] = '*';
+    hidden[adminLen] = '\0';
+
+    DrawText(hidden,390,202,20,BLACK);
+
+    // typing
+    int key = GetCharPressed();
+    while(key > 0)
+    {
+        if(key >= 32 && key <= 125 && adminLen < 19)
+        {
+            adminInput[adminLen++] = key;
+            adminInput[adminLen] = '\0';
+        }
+        key = GetCharPressed();
+    }
+
+    if(IsKeyPressed(KEY_BACKSPACE) && adminLen > 0)
+        adminInput[--adminLen] = '\0';
+
+    // login button
+    if(Button({350,260,200,40},"Login"))
+    {
+        if(strcmp(adminInput, ADMIN_PASS) == 0)
+        {
+            screen = ADMIN;
+            adminError = false;
+
+            adminLen = 0;
+            adminInput[0] = '\0';
+        }
+        else
+        {
+            adminError = true;
+        }
+    }
+
+    if(adminError)
+        DrawText("Wrong Password!", 350, 320, 20, RED);
+
+    if(Button({350,360,200,40},"Back"))
+        screen = LOGIN;
+}
 
         EndDrawing();
     }

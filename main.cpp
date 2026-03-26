@@ -1,355 +1,267 @@
-#include "raylib.h"
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cstdlib>
+
 #include "User.h"
 #include "Product.h"
 #include "Cart.h"
-#include "Payment.h"
 #include "BKashPayment.h"
 #include "CashOnDelivery.h"
 #include "BKashAccounts.h"
 
-#include <cstring>
-#include <cstdlib>
-#include <string>
-
 using namespace std;
 
-// -------- BUTTON --------
-bool Button(Rectangle rec, const char* text)
+// -------- USER FILE --------
+void saveUser(string u, string p)
 {
-    DrawRectangleRec(rec, LIGHTGRAY);
-    DrawRectangleLinesEx(rec, 2, DARKGRAY);
-    DrawText(text, rec.x + 10, rec.y + 10, 20, BLACK);
-
-    return CheckCollisionPointRec(GetMousePosition(), rec) &&
-           IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    ofstream file("users.txt", ios::app);
+    file << u << " " << p << endl;
+    file.close();
 }
 
-// -------- SCREENS --------
-enum Screen
+bool loginUser(string u, string p)
 {
-    HOME,
-    LOGIN,
-    REGISTER,
-    ADMIN_LOGIN,
-    ADMIN,
-    BUYER,
-    ADD_PRODUCT,
-    CART_SCREEN,
-    PAYMENT_SCREEN
-};
+    ifstream file("users.txt");
+    string user, pass;
 
-const char ADMIN_PASS[] = "admin123";
+    while(file >> user >> pass)
+    {
+        if(user == u && pass == p)
+            return true;
+    }
+    return false;
+}
 
-char adminInput[20] = "";
-int adminLen = 0;
-
-bool adminError = false;
 int main()
 {
-    InitWindow(900, 600, "E-Commerce System");
-    SetTargetFPS(60);
+    int choice;
+    const string ADMIN_PASS = "admin123";
 
-    // USERS
-    Buyer buyers[20], pending[20];
-    int buyerCount = 0, pendingCount = 0;
-    Buyer* loggedBuyer = NULL;
+    Buyer pending[20];
+    int pendingCount = 0;
 
-    // CART
     Cart cart;
 
-    // INPUT
-    char username[20] = "";
-    char password[20] = "";
-    int userLen = 0, passLen = 0;
-
-    // PRODUCT INPUT
-    char pname[30] = "";
-    char pcat[30] = "";
-    char pprice[10] = "";
-    char pstock[10] = "";
-
-    int nameLen=0, catLen=0, priceLen=0, stockLen=0;
-
-    // PAYMENT
-    char bkashNumber[20] = "";
-    int bkashLen = 0;
-
-    // ADMIN
-    const char ADMIN_PASS[] = "admin123";
-    char adminPass[20] = "";
-    int adminLen = 0;
-    bool adminError = false;
-
-    Screen screen = HOME;
-
-    while(!WindowShouldClose())
+    while(true)
     {
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
+        cout << "\n===== E-COMMERCE SYSTEM =====\n";
+        cout << "1. Register\n";
+        cout << "2. Login\n";
+        cout << "0. Exit\n";
+        cout << "Choice: ";
+        cin >> choice;
 
-        // ================= HOME =================
-        if(screen == HOME)
-        {
-            DrawText("MAHO E-COMMERCE", 250, 80, 30, DARKBLUE);
-
-            if(Button({350,200,200,50},"Login"))
-                screen = LOGIN;
-
-            if(Button({350,270,200,50},"Register"))
-                screen = REGISTER;
-        }
+        if(choice == 0) break;
 
         // ================= REGISTER =================
-        else if(screen == REGISTER)
+        if(choice == 1)
         {
-            DrawText("Register Buyer", 320, 80, 30, BLACK);
+            string u, p;
+            cout << "Enter username: ";
+            cin >> u;
+            cout << "Enter password: ";
+            cin >> p;
 
-            DrawText("Username:",250,200,20,BLACK);
-            DrawRectangle(380,195,250,35,LIGHTGRAY);
-            DrawText(username,390,202,20,BLACK);
+            pending[pendingCount++] = Buyer(u,p);
+            saveUser(u,p);
 
-            DrawText("Password:",250,260,20,BLACK);
-            DrawRectangle(380,255,250,35,LIGHTGRAY);
-            DrawText(password,390,262,20,BLACK);
-
-            int key = GetCharPressed();
-            while(key > 0)
-            {
-                if(key >= 32 && key <= 125)
-                {
-                    if(userLen < 19)
-                    {
-                        username[userLen++] = key;
-                        username[userLen] = '\0';
-                    }
-                }
-                key = GetCharPressed();
-            }
-
-            if(IsKeyPressed(KEY_BACKSPACE) && userLen>0)
-                username[--userLen]='\0';
-
-            if(Button({350,330,200,40},"Submit"))
-            {
-                pending[pendingCount++] = Buyer(username,password);
-
-                username[0]=password[0]='\0';
-                userLen=passLen=0;
-
-                screen = HOME;
-            }
-
-            if(Button({350,390,200,40},"Back"))
-                screen = HOME;
+            cout << "Registration submitted (waiting admin approval)\n";
         }
 
         // ================= LOGIN =================
-        else if(screen == LOGIN)
+        else if(choice == 2)
         {
-            DrawText("Login", 380, 80, 30, BLACK);
+            int type;
+            cout << "\n1. Buyer Login\n2. Admin Login\nChoice: ";
+            cin >> type;
 
-            if(Button({350,200,200,40},"Buyer Login"))
-                screen = BUYER;
-
-           if(Button({350,260,200,40},"Admin Login"))
-                screen = ADMIN_LOGIN;
-        }
-
-        // ================= ADMIN =================
-        else if(screen == ADMIN)
-        {
-            DrawText("Admin Panel", 330, 40, 30, DARKBLUE);
-
-            int y = 120;
-
-            for(int i=0;i<pendingCount;i++)
+            // -------- BUYER --------
+            if(type == 1)
             {
-                DrawText(pending[i].getUsername().c_str(), 50, y, 20, BLACK);
+                string u,p;
+                cout << "Username: "; cin >> u;
+                cout << "Password: "; cin >> p;
 
-                if(Button({250,(float)y,80,30},"Accept"))
+                if(loginUser(u,p))
                 {
-                    buyers[buyerCount++] = pending[i];
+                    cout << "Login successful!\n";
 
-                    for(int j=i;j<pendingCount-1;j++)
-                        pending[j]=pending[j+1];
+                    int bchoice;
 
-                    pendingCount--;
+                    while(true)
+                    {
+                        cout << "\n--- BUYER MENU ---\n";
+                        cout << "1. View Products\n";
+                        cout << "2. Add Product to Cart\n";
+                        cout << "3. View Cart\n";
+                        cout << "4. Checkout\n";
+                        cout << "0. Logout\n";
+                        cout << "Choice: ";
+                        cin >> bchoice;
+
+                        if(bchoice == 0) break;
+
+                        // VIEW PRODUCTS
+                        if(bchoice == 1)
+                        {
+                            Product::listAllProducts();
+                        }
+
+                        // ADD TO CART
+                        else if(bchoice == 2)
+                        {
+                            int id, qty;
+                            cout << "Enter Product ID: ";
+                            cin >> id;
+                            cout << "Quantity: ";
+                            cin >> qty;
+
+                            // NOTE: simple product object
+                            Product p(id,"Temp","Temp",100,10);
+                            cart.addItem(p, qty);
+                        }
+
+                        // VIEW CART
+                        else if(bchoice == 3)
+                        {
+                            cart.viewCart();
+                        }
+
+                        // CHECKOUT
+                        else if(bchoice == 4)
+                        {
+                            double total = cart.getTotal();
+                            cout << "Total: " << total << endl;
+
+                            int pay;
+                            cout << "1. bKash\n2. Cash On Delivery\nChoice: ";
+                            cin >> pay;
+
+                            if(pay == 1)
+                            {
+                                string number;
+                                cout << "Enter bKash number: ";
+                                cin >> number;
+
+                                BKashAccounts acc;
+                                acc.loadAccounts("bKashAccounts.txt");
+
+                                BKashPayment payment(total, number);
+
+                                if(payment.validate())
+                                    payment.process(acc);
+                            }
+                            else
+                            {
+                                CashOnDelivery payment(total);
+                                BKashAccounts dummy;
+                                payment.process(dummy);
+                            }
+
+                            cart.clearCart();
+                        }
+                    }
                 }
-
-                if(Button({350,(float)y,80,30},"Reject"))
+                else
                 {
-                    for(int j=i;j<pendingCount-1;j++)
-                        pending[j]=pending[j+1];
-
-                    pendingCount--;
+                    cout << "Invalid login!\n";
                 }
-
-                y+=40;
             }
 
-            if(Button({600,200,200,40},"Add Product"))
-                screen = ADD_PRODUCT;
-
-            if(Button({600,260,200,40},"Logout"))
-                screen = HOME;
-        }
-
-        // ================= ADD PRODUCT =================
-        else if(screen == ADD_PRODUCT)
-        {
-            DrawText("Add Product", 350, 80, 30, BLACK);
-
-            DrawRectangle(300,200,250,35,LIGHTGRAY);
-            DrawText(pname,310,205,20,BLACK);
-
-            int key = GetCharPressed();
-            while(key>0)
+            // -------- ADMIN --------
+            else if(type == 2)
             {
-                if(nameLen<29)
+                string pass;
+                cout << "Enter admin password: ";
+                cin >> pass;
+
+                if(pass == ADMIN_PASS)
                 {
-                    pname[nameLen++] = key;
-                    pname[nameLen]='\0';
+                    cout << "Admin login success!\n";
+
+                    int achoice;
+
+                    while(true)
+                    {
+                        cout << "\n--- ADMIN MENU ---\n";
+                        cout << "1. View Pending Buyers\n";
+                        cout << "2. Add Product\n";
+                        cout << "3. Delete Product\n";
+                        cout << "4. View Products\n";
+                        cout << "0. Logout\n";
+                        cout << "Choice: ";
+                        cin >> achoice;
+
+                        if(achoice == 0) break;
+
+                        // PENDING USERS
+                        if(achoice == 1)
+                        {
+                            if(pendingCount == 0)
+                            {
+                                cout << "No pending users\n";
+                            }
+
+                            for(int i=0;i<pendingCount;i++)
+                            {
+                                cout << i+1 << ". " << pending[i].getUsername() << endl;
+
+                                int act;
+                                cout << "1.Accept  2.Reject: ";
+                                cin >> act;
+
+                                for(int j=i;j<pendingCount-1;j++)
+                                    pending[j]=pending[j+1];
+
+                                pendingCount--;
+                                i--;
+                            }
+                        }
+
+                        // ADD PRODUCT
+                        else if(achoice == 2)
+                        {
+                            int id, stock;
+                            double price;
+                            string name, category;
+
+                            cout << "ID: "; cin >> id;
+                            cout << "Name: "; cin >> name;
+                            cout << "Category: "; cin >> category;
+                            cout << "Price: "; cin >> price;
+                            cout << "Stock: "; cin >> stock;
+
+                            Product p(id,name,category,price,stock);
+                            p.saveToFile();
+
+                            cout << "Product added successfully!\n";
+                        }
+
+                        // DELETE PRODUCT2
+                        else if(achoice == 3)
+                        {
+                            int id;
+                            cout << "Enter product ID to delete: ";
+                            cin >> id;
+
+                            Product::deleteProduct(id);
+                        }
+
+                        // VIEW PRODUCTS
+                        else if(achoice == 4)
+                        {
+                            Product::listAllProducts();
+                        }
+                    }
                 }
-                key=GetCharPressed();
+                else
+                {
+                    cout << "Wrong admin password!\n";
+                }
             }
-
-            if(Button({350,300,200,40},"Save"))
-            {
-                Product p(rand()%1000, pname, "General", atof(pprice), 10);
-                p.saveToFile();
-
-                pname[0]='\0';
-                nameLen=0;
-
-                screen = ADMIN;
-            }
-        }
-
-        // ================= BUYER =================
-        else if(screen == BUYER)
-        {
-            DrawText("Buyer Dashboard", 320, 50, 30, BLACK);
-
-            if(Button({350,200,200,40},"Add Fake Product"))
-            {
-                Product p(1,"Phone","Electronics",500,10);
-                cart.addItem(p,1);
-            }
-
-            if(Button({350,260,200,40},"View Cart"))
-                screen = CART_SCREEN;
-
-            if(Button({350,320,200,40},"Logout"))
-                screen = HOME;
-        }
-
-        // ================= CART =================
-        else if(screen == CART_SCREEN)
-        {
-            DrawText("Cart", 400, 50, 30, BLACK);
-
-            DrawText(
-                TextFormat("Total: %.2f", cart.getTotal()),
-                350,200,20,BLACK
-            );
-
-            if(Button({350,300,200,40},"Checkout"))
-                screen = PAYMENT_SCREEN;
-
-            if(Button({350,360,200,40},"Back"))
-                screen = BUYER;
-        }
-
-        // ================= PAYMENT =================
-        else if(screen == PAYMENT_SCREEN)
-        {
-            DrawText("Payment", 380, 80, 30, BLACK);
-
-            if(Button({350,200,200,40},"bKash"))
-            {
-                BKashAccounts acc;
-                acc.loadAccounts("bKashAccounts.txt");
-
-                Payment* p = new BKashPayment(cart.getTotal(), "01700000000");
-
-                if(p->validate())
-                    p->process(acc);
-
-                delete p;
-                cart.clearCart();
-            }
-
-            if(Button({350,260,200,40},"Cash On Delivery"))
-            {
-                Payment* p = new CashOnDelivery(cart.getTotal());
-
-                p->process(*(new BKashAccounts()));
-
-                delete p;
-                cart.clearCart();
-            }
-
-            if(Button({350,320,200,40},"Back"))
-                screen = CART_SCREEN;
-        }
-
-               else if(screen == ADMIN_LOGIN)
-{
-    DrawText("Admin Login", 350, 80, 30, BLACK);
-
-    DrawText("Password:", 250, 200, 20, BLACK);
-    DrawRectangle(380,195,250,35,LIGHTGRAY);
-
-    // hide password
-    char hidden[20] = "";
-    for(int i=0;i<adminLen;i++)
-        hidden[i] = '*';
-    hidden[adminLen] = '\0';
-
-    DrawText(hidden,390,202,20,BLACK);
-
-    // typing
-    int key = GetCharPressed();
-    while(key > 0)
-    {
-        if(key >= 32 && key <= 125 && adminLen < 19)
-        {
-            adminInput[adminLen++] = key;
-            adminInput[adminLen] = '\0';
-        }
-        key = GetCharPressed();
-    }
-
-    if(IsKeyPressed(KEY_BACKSPACE) && adminLen > 0)
-        adminInput[--adminLen] = '\0';
-
-    // login button
-    if(Button({350,260,200,40},"Login"))
-    {
-        if(strcmp(adminInput, ADMIN_PASS) == 0)
-        {
-            screen = ADMIN;
-            adminError = false;
-
-            adminLen = 0;
-            adminInput[0] = '\0';
-        }
-        else
-        {
-            adminError = true;
         }
     }
 
-    if(adminError)
-        DrawText("Wrong Password!", 350, 320, 20, RED);
-
-    if(Button({350,360,200,40},"Back"))
-        screen = LOGIN;
-}
-
-        EndDrawing();
-    }
-
-    CloseWindow();
     return 0;
 }

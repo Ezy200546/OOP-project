@@ -61,12 +61,14 @@ void Product::displayProduct() {
 }
 
 // Save product to file
-void Product::saveToFile() {
+void Product::saveToFile()
+{
+    // This will CREATE file automatically if it doesn't exist
+    ofstream file("products.txt", ios::app);
 
-    ofstream file("data/products.txt", ios::app);
-
-    if(!file) {
-        cout << "Error opening file\n";
+    if(!file.is_open())
+    {
+        cout << "Error opening file!" << endl;
         return;
     }
 
@@ -77,6 +79,8 @@ void Product::saveToFile() {
          << stock << endl;
 
     file.close();
+
+    cout << "Product saved successfully!" << endl;
 }
 
 // List all products

@@ -3,25 +3,33 @@
 #include <iostream>
 
 using namespace std;
-
-void BKashAccounts::loadAccounts(const string &filename) {
+ofstream file("bKashAccounts.txt");
+void BKashAccounts::loadAccounts(const string &filename)
+{
     ifstream file(filename);
 
-    if(!file.is_open()) {
-        cout << "Cannot open accounts file!" << endl;
+    
+    if(!file.is_open())
+    {
+        ofstream create(filename);
+        create.close();
         return;
     }
 
     string number;
     double balance;
 
-    while(file >> number >> balance) {
+    while(file >> number >> balance)
+    {
         accounts[number] = balance;
     }
 
     file.close();
 }
-
+void BKashAccounts::addAccount(const string &number, double balance)
+{
+    accounts[number] = balance;
+}
 void BKashAccounts::saveAccounts(const string &filename) {
     ofstream file(filename);
 

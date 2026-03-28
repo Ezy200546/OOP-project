@@ -13,7 +13,8 @@
 using namespace std;
 
 // Constructor
-Order::Order() {
+Order::Order(string user) {
+    username= user;
     orderId = 0;
     itemCount = 0;
     totalAmount = 0;
@@ -95,18 +96,23 @@ double Order::getTotalAmount() { return totalAmount; }
 string Order::getStatus() { return status; }
 
 // Save order to file
-void Order::saveToFile() {
+void Order::saveToFile()
+{
     ofstream file("orders.txt", ios::app);
-    if(!file) {
+
+    if(!file)
+    {
         cout << "Error opening orders file.\n";
         return;
     }
 
-    file << orderId << " "
-         << itemCount << " "
-         << totalAmount << " "
-         << paymentMethod << " "
-         << status << endl;
+    file << "User: " << username << endl;
+    file << "OrderID: " << orderId << endl;
+    file << "Items: " << itemCount << endl;
+    file << "Total: " << totalAmount << endl;
+    file << "Payment: " << paymentMethod << endl;
+    file << "Status: " << status << endl;
+    file << "--------------------------" << endl;
 
     file.close();
 }

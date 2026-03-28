@@ -11,6 +11,7 @@ private:
 public:
     void loadAccounts(const std::string &filename);
     void saveAccounts(const std::string &filename);
+    void addAccount(const std::string &number, double balance);
 
     bool accountExists(const std::string &number);
     double getBalance(const std::string &number);

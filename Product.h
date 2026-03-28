@@ -6,6 +6,7 @@
 
 using namespace std;
 
+// Base class: Product
 class Product {
 private:
     int id;
@@ -19,6 +20,9 @@ public:
     Product();
     Product(int id, string name, string category, double price, int stock);
 
+    // Destructor (virtual for inheritance safety)
+    virtual ~Product(){}
+
     // Getters
     int getId();
     string getName();
@@ -30,18 +34,14 @@ public:
     void setPrice(double price);
     void setStock(int stock);
 
-    // Display product
-    void displayProduct();
+    // Virtual function (for polymorphism)
+    virtual void displayProduct();
 
     // File operations
     void saveToFile();
 
-    // Static operations
+    // Static utility functions
     static void listAllProducts();
     static void searchProduct(int id);
     static void deleteProduct(int id);
-    static bool getProductById(int id,Product &result);
-    static void updateStock(int id, int newStock);
 };
-
-#endif

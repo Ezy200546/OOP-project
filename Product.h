@@ -40,6 +40,7 @@ public:
     static void listAllProducts();
     static void searchProduct(int id);
     static void deleteProduct(int id);
+    static bool getProductById(int id,Product &result);
 };
 
 #endif

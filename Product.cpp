@@ -1,4 +1,4 @@
-#include "Product.h"
+#include "../include/Product.h"
 #include <fstream>
 #include <cstdio>
 
@@ -50,7 +50,7 @@ void Product::setStock(int stock) {
     this->stock = stock;
 }
 
-// Display product
+// Virtual display function (can be overridden)
 void Product::displayProduct() {
     cout << "ID: " << id << endl;
     cout << "Name: " << name << endl;
@@ -60,15 +60,13 @@ void Product::displayProduct() {
     cout << "------------------------" << endl;
 }
 
-// Save product to file
-void Product::saveToFile()
-{
-    // This will CREATE file automatically if it doesn't exist
-    ofstream file("products.txt", ios::app);
+// Save product to file (append mode)
+void Product::saveToFile() {
 
-    if(!file.is_open())
-    {
-        cout << "Error opening file!" << endl;
+    ofstream file("data/products.txt", ios::app);
+
+    if(!file) {
+        cout << "Error opening file\n";
         return;
     }
 
@@ -79,13 +77,12 @@ void Product::saveToFile()
          << stock << endl;
 
     file.close();
-
-    cout << "Product saved successfully!" << endl;
 }
+
 // List all products
 void Product::listAllProducts() {
 
-    ifstream file("products.txt");
+    ifstream file("data/products.txt");
 
     if(!file) {
         cout << "Error opening file\n";
@@ -112,7 +109,12 @@ void Product::listAllProducts() {
 // Search product by ID
 void Product::searchProduct(int searchId) {
 
-    ifstream file("products.txt");
+    ifstream file("data/products.txt");
+
+    if(!file) {
+        cout << "Error opening file\n";
+        return;
+    }
 
     int id, stock;
     string name, category;
@@ -141,30 +143,17 @@ void Product::searchProduct(int searchId) {
 
     file.close();
 }
-bool Product::getProductById(int searchId, Product &result)
-{
-    ifstream file("products.txt");
 
-    int id, stock;
-    string name, category;
-    double price;
-
-    while(file >> id >> name >> category >> price >> stock)
-    {
-        if(id == searchId)
-        {
-            result = Product(id, name, category, price, stock);
-            return true;
-        }
-    }
-
-    return false;
-}
 // Delete product
 void Product::deleteProduct(int deleteId) {
 
-    ifstream file("products.txt");
-    ofstream temp("temp.txt");
+    ifstream file("data/products.txt");
+    ofstream temp("data/temp.txt");
+
+    if(!file || !temp) {
+        cout << "Error opening file\n";
+        return;
+    }
 
     int id, stock;
     string name, category;
@@ -189,46 +178,11 @@ void Product::deleteProduct(int deleteId) {
     file.close();
     temp.close();
 
-    remove("products.txt");
-    rename("temp.txt", "products.txt");
+    remove("data/products.txt");
+    rename("data/temp.txt", "data/products.txt");
 
     if(found)
         cout << "Product deleted successfully\n";
     else
         cout << "Product not found\n";
-}
-void Product::updateStock(int searchId, int newStock)
-{
-    ifstream file("products.txt");
-    ofstream temp("temp.txt");
-
-    if(!file || !temp)
-    {
-        cout << "Error updating stock!\n";
-        return;
-    }
-
-    int id, stock;
-    string name, category;
-    double price;
-
-    while(file >> id >> name >> category >> price >> stock)
-    {
-        if(id == searchId)
-        {
-            stock = newStock; // 🔥 update stock
-        }
-
-        temp << id << " "
-             << name << " "
-             << category << " "
-             << price << " "
-             << stock << endl;
-    }
-
-    file.close();
-    temp.close();
-
-    remove("products.txt");
-    rename("temp.txt", "products.txt");
 }

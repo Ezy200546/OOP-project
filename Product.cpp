@@ -1,4 +1,4 @@
-#include "../include/Product.h"
+#include "Product.h"
 #include <fstream>
 #include <cstdio>
 
@@ -82,11 +82,10 @@ void Product::saveToFile()
 
     cout << "Product saved successfully!" << endl;
 }
-
 // List all products
 void Product::listAllProducts() {
 
-    ifstream file("data/products.txt");
+    ifstream file("products.txt");
 
     if(!file) {
         cout << "Error opening file\n";
@@ -113,7 +112,7 @@ void Product::listAllProducts() {
 // Search product by ID
 void Product::searchProduct(int searchId) {
 
-    ifstream file("data/products.txt");
+    ifstream file("products.txt");
 
     int id, stock;
     string name, category;
@@ -142,12 +141,30 @@ void Product::searchProduct(int searchId) {
 
     file.close();
 }
+bool Product::getProductById(int searchId, Product &result)
+{
+    ifstream file("products.txt");
 
+    int id, stock;
+    string name, category;
+    double price;
+
+    while(file >> id >> name >> category >> price >> stock)
+    {
+        if(id == searchId)
+        {
+            result = Product(id, name, category, price, stock);
+            return true;
+        }
+    }
+
+    return false;
+}
 // Delete product
 void Product::deleteProduct(int deleteId) {
 
-    ifstream file("data/products.txt");
-    ofstream temp("data/temp.txt");
+    ifstream file("products.txt");
+    ofstream temp("temp.txt");
 
     int id, stock;
     string name, category;
@@ -172,8 +189,8 @@ void Product::deleteProduct(int deleteId) {
     file.close();
     temp.close();
 
-    remove("data/products.txt");
-    rename("data/temp.txt", "data/products.txt");
+    remove("products.txt");
+    rename("temp.txt", "products.txt");
 
     if(found)
         cout << "Product deleted successfully\n";

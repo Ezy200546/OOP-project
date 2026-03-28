@@ -12,15 +12,18 @@ bool BKashPayment::validate() {
     return true;
 }
 
-bool BKashPayment::process(BKashAccounts &accounts) {
-
-    if (!accounts.accountExists(number)) {
-        std::cout << "Account not found\n";
-        return false;
+bool BKashPayment::process(BKashAccounts &accounts)
+{
+    // 🔥 If account doesn't exist → create it
+    if (!accounts.accountExists(number))
+    {
+        std:: cout << "New bKash account created!\n";
+        accounts.addAccount(number, 1000); // default balance
     }
 
-    if (!accounts.deductBalance(number, amount)) {
-        std::cout << "Insufficient balance\n";
+    if (!accounts.deductBalance(number, amount))
+    {
+        std:: cout << "Insufficient balance\n";
         return false;
     }
 

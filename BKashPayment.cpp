@@ -14,7 +14,7 @@ bool BKashPayment::validate() {
 
 bool BKashPayment::process(BKashAccounts &accounts)
 {
-    // 🔥 If account doesn't exist → create it
+  
     if (!accounts.accountExists(number))
     {
         std:: cout << "New bKash account created!\n";

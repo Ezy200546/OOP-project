@@ -197,3 +197,38 @@ void Product::deleteProduct(int deleteId) {
     else
         cout << "Product not found\n";
 }
+void Product::updateStock(int searchId, int newStock)
+{
+    ifstream file("products.txt");
+    ofstream temp("temp.txt");
+
+    if(!file || !temp)
+    {
+        cout << "Error updating stock!\n";
+        return;
+    }
+
+    int id, stock;
+    string name, category;
+    double price;
+
+    while(file >> id >> name >> category >> price >> stock)
+    {
+        if(id == searchId)
+        {
+            stock = newStock; // 🔥 update stock
+        }
+
+        temp << id << " "
+             << name << " "
+             << category << " "
+             << price << " "
+             << stock << endl;
+    }
+
+    file.close();
+    temp.close();
+
+    remove("products.txt");
+    rename("temp.txt", "products.txt");
+}
